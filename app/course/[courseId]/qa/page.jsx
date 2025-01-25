@@ -3,15 +3,10 @@ import axios from "axios";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
-interface QAPair {
-    question: string;
-    answer: string;
-}
-
 export default function QAViewer() {
-  const [qaData, setQAData] = useState<QAPair[]>([]);
+  const [qaData, setQAData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const { courseId } = useParams();
 
   useEffect(() => {
