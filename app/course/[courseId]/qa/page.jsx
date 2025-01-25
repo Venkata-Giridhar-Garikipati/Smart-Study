@@ -3,58 +3,67 @@ import axios from "axios";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
+interface QAPair {
+    question: string;
+    answer: string;
+}
+
 export default function QAViewer() {
-  const [qaData, setQAData] = useState([]);
+  const [qaData, setQAData] = useState<QAPair[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const { courseId } = useParams();
 
   useEffect(() => {
-    GetQA();
-  }, []);
-
-  const GetQA = async () => {
-    try {
-      const result = await axios.post("/api/study-type", {
-        courseId: courseId,
-        studyType: "qa",
-      });
-      console.log("API Response:", result?.data);
-      //console.log(result?.data?.[0]?.content);
-
-      // Attempt to parse the JSON string
+    const fetchQAData = async () => {
       try {
-        const contentString = result?.data?.[0]?.content;
-        // Parse the string, this will handle the case if the content is a object string or a object.
-        const parsedContent = JSON.parse(contentString);
-        // Handle different response structure
-        let qnaPairs;
-        if (Array.isArray(parsedContent)){
-          qnaPairs = parsedContent;
-        } else if (parsedContent && parsedContent.qnaPairs){
-         qnaPairs = parsedContent.qnaPairs;
-        }
-        else {
-          throw new Error("Invalid Data Structure");
-        }
+        setLoading(true);
+        const result = await axios.post("/api/study-type", {
+          courseId: courseId,
+          studyType: "qa",
+        });
+        console.log("API Response:", result?.data);
+        try {
+          const contentString = result?.data?.[0]?.content;
+          let parsedContent;
+        // Check if the content string is a valid JSON string
+          if (typeof contentString === 'string' && (contentString.startsWith('{') || contentString.startsWith('[')) ) {
+               parsedContent = JSON.parse(contentString);
+           }
+          else{
+              // If content is not a json string, then assign the content as it is
+              parsedContent= contentString;
+          }
+          let qnaPairs;
+          // Handle different response structure
+          if (Array.isArray(parsedContent)){
+             qnaPairs = parsedContent;
+          } else if (parsedContent && parsedContent.qnaPairs){
+             qnaPairs = parsedContent.qnaPairs;
+           }
+          else {
+              throw new Error("Invalid Data Structure");
+            }
 
+          setQAData(qnaPairs);
+          setLoading(false);
 
-        // Set qaData to the qnaPairs array
-        setQAData(qnaPairs);
-
-      } catch (parseError) {
+        } catch (parseError) {
           console.error("Error parsing JSON:", parseError);
           setError("Failed to parse or invalid QA data format");
-          setQAData([]) //ensure it is set to an empty array so map operation does not fail
-      }
+          setQAData([]);
+          setLoading(false);
+        }
 
-      setLoading(false);
-    } catch (err) {
-      setError("Failed to load QA data.");
-      setLoading(false);
-      console.error("Error fetching QA data:", err);
-    }
-  };
+      } catch (err) {
+         setError("Failed to load QA data.");
+         setLoading(false);
+         console.error("Error fetching QA data:", err);
+      }
+    };
+
+    fetchQAData();
+  }, [courseId]);
 
   if (loading) {
     return (
