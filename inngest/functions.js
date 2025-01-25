@@ -2,7 +2,7 @@ import { CHAPTER_NOTES_TABLE, STUDY_MATERIAL_TABLE, STUDY_TYPE_CONTENT_TABLE, US
 import { inngest } from "./client";
 import { db } from "@/configs/db";
 import { eq } from "drizzle-orm";
-import { generateNotesAiModel, GenerateQuizAiModel, GenerateStudyTypeContentAiModel } from "@/configs/AiModel";
+import { generateNotesAiModel, GenerateQuizAiModel, GenerateStudyTypeContentAiModel, GenerateQAAiModel } from "@/configs/AiModel";
 
 // A simple example function
 export const helloWorld = inngest.createFunction(
@@ -78,7 +78,7 @@ export const GenerateNotes = inngest.createFunction(
     const notesResult = await step.run('Generate Chapter Notes',async()=>{
       const Chapters = course?.courseLayout?.chapters;
       let index = 0;
-      Chapters.forEach(async (chapter) => {
+      for (const chapter of Chapters) {
         const PROMPT = 'Generate exam material detail content for each chapter Make sure to includes all topic print in the content, make sure to give content in HTML format (Do not Add HTMLK Head, Body, title tag), The chapters :'+JSON.stringify(chapter);
         const result = await generateNotesAiModel.sendMessage(PROMPT);
         const aiResp = result.response.text();
@@ -89,7 +89,7 @@ export const GenerateNotes = inngest.createFunction(
           notes:aiResp
         })
         index=index+1;
-      });
+      }
       return 'Completed'
     })
     //Update the status to 'Ready'
@@ -110,39 +110,27 @@ export const GenerateStudyTypeContent = inngest.createFunction(
   async ({event,step})=>{
     const {studyType,prompt,courseId,recordId} = event.data;
       
-    const AiResult = await step.run('Generating Flashcard using AI',async()=>{
+    const AiResult = await step.run('Generating Study Type Content using AI',async()=>{
+       let result;
+      if (studyType?.toLowerCase() === 'flashcards' ) {
+         result = await GenerateStudyTypeContentAiModel.sendMessage(prompt)
+      }else if(studyType?.toLowerCase()==='qa'|| studyType?.toLowerCase()==='questionandanswer' || studyType?.toLowerCase()==='question and answer') {
+        result= await GenerateQAAiModel.sendMessage(prompt);
+      }
+       else {
+        result = await GenerateQuizAiModel.sendMessage(prompt)
+      }
 
-      const result = await GenerateStudyTypeContentAiModel.sendMessage(prompt)
-      
-      studyType==='Flashcards'||'flashcards'||'Flashcard'||'flashcard' ?
-      await GenerateStudyTypeContentAiModel.sendMessage(prompt):
-      await GenerateQuizAiModel.sendMessage(prompt);
-     // const AIResult = JSON.parse(result.response.text());
-    // console.log('Raw Response:', result.response.text());
-
-     //const cleanResponse = result.response.text().replace(/```json|```/g, '').trim();
-     //const AIResult = JSON.parse(cleanResponse);
-
-      //return AIResult
       try {
-        // Get the raw response text
         const rawResponse = result.response.text();
         console.log('Raw Response:', rawResponse);
-    
-        // Remove markdown block markers
         const cleanResponse = rawResponse.replace(/```json|```/g, '').trim();
-    
-        // Parse the sanitized JSON string
         const AIResult = JSON.parse(cleanResponse);
-    
-        // Return the parsed JSON
         return AIResult;
     } catch (error) {
         console.error('Failed to parse response:', error);
         throw new Error('Invalid JSON format in API response');
     }
-    
-
     })
     //save result
 
