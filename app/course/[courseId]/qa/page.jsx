@@ -21,11 +21,23 @@ export default function QAViewer() {
       });
       console.log(result?.data);
       console.log(result?.data?.[0]?.content);
-      setQAData(result?.data?.[0]?.content);
-      setLoading(false); // Set loading to false after data is fetched
+
+      // Attempt to parse the JSON string
+      try {
+        const parsedContent = JSON.parse(result?.data?.[0]?.content);
+        console.log(parsedContent.qnaPairs);
+        // Set qaData to the qnaPairs array
+        setQAData(parsedContent.qnaPairs);
+      } catch (parseError) {
+        console.error("Error parsing JSON:", parseError);
+        setError("Failed to parse QA data.");
+         setQAData([]) //ensure it is set to an empty array so map operation does not fail
+      }
+
+      setLoading(false);
     } catch (err) {
-      setError("Failed to load QA data."); // Set error if API call fails
-      setLoading(false); // Also set loading to false in case of error
+      setError("Failed to load QA data.");
+      setLoading(false);
       console.error("Error fetching QA data:", err);
     }
   };
@@ -38,7 +50,7 @@ export default function QAViewer() {
     );
   }
 
-  if(error){
+  if (error) {
     return (
       <div className="p-6 max-w-4xl mx-auto bg-white shadow-md rounded-lg flex items-center justify-center">
         <p className="text-red-600">Error: {error}</p>
