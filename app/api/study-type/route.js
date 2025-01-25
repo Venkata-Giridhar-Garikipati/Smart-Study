@@ -1,9 +1,7 @@
 import { db } from "@/configs/db";
 import { CHAPTER_NOTES_TABLE, STUDY_TYPE_CONTENT_TABLE } from "@/configs/schema";
-import { and, eq, like,or } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import validator from 'validator';
-
 
 export async function POST(req) {
   const { courseId, studyType } = await req.json();
@@ -11,25 +9,22 @@ export async function POST(req) {
   if (!courseId || !studyType) {
     return NextResponse.json({ error: "Missing courseId or studyType" }, { status: 400 });
   }
-  // Sanitize the courseId and studyType
-  const sanitizedCourseId = validator.escape(courseId);
-    const sanitizedStudyType = validator.escape(studyType);
 
   try {
-     const standardizedStudyType = sanitizedStudyType.toLowerCase();
+    const standardizedStudyType = studyType.toLowerCase();
 
-    if (sanitizedStudyType === "ALL") {
+    if (studyType === "ALL") {
       // Fetch notes
       const notes = await db
         .select()
         .from(CHAPTER_NOTES_TABLE)
-        .where(eq(CHAPTER_NOTES_TABLE.courseId, sanitizedCourseId));
+        .where(eq(CHAPTER_NOTES_TABLE.courseId, courseId));
 
       // Fetch all study type content related to courseId
       const contentList = await db
         .select()
         .from(STUDY_TYPE_CONTENT_TABLE)
-        .where(eq(STUDY_TYPE_CONTENT_TABLE.courseId, sanitizedCourseId));
+        .where(eq(STUDY_TYPE_CONTENT_TABLE.courseId, courseId));
 
       // Structure the result based on type, standardized to lowercase
       const result = {
@@ -38,7 +33,7 @@ export async function POST(req) {
           (item) => (item.type || "").toLowerCase() === "flashcards" || (item.type || "").toLowerCase() === "flashcard"
         ),
         quiz: contentList?.filter((item) => (item.type || "").toLowerCase() === "quiz"),
-         qa: contentList?.filter((item) => (item.type || "").toLowerCase() === "qa"),
+        qa: contentList?.filter((item) => (item.type || "").toLowerCase() === "qa"),
       };
 
       return NextResponse.json(result, { status: 200 });
@@ -51,17 +46,15 @@ export async function POST(req) {
         result = await db
           .select()
           .from(CHAPTER_NOTES_TABLE)
-          .where(eq(CHAPTER_NOTES_TABLE.courseId, sanitizedCourseId));
+          .where(eq(CHAPTER_NOTES_TABLE.courseId, courseId));
       } else if (standardizedStudyType === "flashcards" || standardizedStudyType === "flashcard") {
         result = await db
           .select()
           .from(STUDY_TYPE_CONTENT_TABLE)
           .where(
             and(
-              eq(STUDY_TYPE_CONTENT_TABLE.courseId, sanitizedCourseId),
-              or(
-               eq(STUDY_TYPE_CONTENT_TABLE.type, "flashcards"),
-              eq(STUDY_TYPE_CONTENT_TABLE.type,'flashcard'))
+              eq(STUDY_TYPE_CONTENT_TABLE.courseId, courseId),
+              eq(STUDY_TYPE_CONTENT_TABLE.type, "flashcards")
             )
           );
       } else if (standardizedStudyType === "quiz") {
@@ -70,7 +63,7 @@ export async function POST(req) {
           .from(STUDY_TYPE_CONTENT_TABLE)
           .where(
             and(
-              eq(STUDY_TYPE_CONTENT_TABLE.courseId, sanitizedCourseId),
+              eq(STUDY_TYPE_CONTENT_TABLE.courseId, courseId),
               eq(STUDY_TYPE_CONTENT_TABLE.type, "quiz")
             )
           );
@@ -80,15 +73,13 @@ export async function POST(req) {
           .from(STUDY_TYPE_CONTENT_TABLE)
           .where(
             and(
-              eq(STUDY_TYPE_CONTENT_TABLE.courseId, sanitizedCourseId),
+              eq(STUDY_TYPE_CONTENT_TABLE.courseId, courseId),
               eq(STUDY_TYPE_CONTENT_TABLE.type, "qa")
             )
           );
       }
 
-
       if (!result || result.length === 0) {
-          console.log("no data found")
         return NextResponse.json(
           { error: `No data found for studyType: ${studyType}` },
           { status: 404 }
@@ -100,7 +91,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Invalid studyType" }, { status: 400 });
     }
   } catch (error) {
-      console.error("Error fetching data:", error);
+    console.error("Error fetching data:", error);
     return NextResponse.json({ error: "Failed to fetch data" }, { status: 500 });
   }
 }

@@ -117,7 +117,7 @@ const {
     });
 
 
-    const GenerateQAAiModel = model.startChat({
+ export  const GenerateQAAiModel = model.startChat({
       generationConfig,
       history: [
         {
