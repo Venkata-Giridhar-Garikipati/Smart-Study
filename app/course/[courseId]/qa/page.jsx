@@ -19,19 +19,33 @@ export default function QAViewer() {
         courseId: courseId,
         studyType: "qa",
       });
-      console.log(result?.data);
-      console.log(result?.data?.[0]?.content);
+      console.log("API Response:", result?.data);
+      //console.log(result?.data?.[0]?.content);
 
       // Attempt to parse the JSON string
       try {
-        const parsedContent = JSON.parse(result?.data?.[0]?.content);
-        console.log(parsedContent.qnaPairs);
+        const contentString = result?.data?.[0]?.content;
+        // Parse the string, this will handle the case if the content is a object string or a object.
+        const parsedContent = JSON.parse(contentString);
+        // Handle different response structure
+        let qnaPairs;
+        if (Array.isArray(parsedContent)){
+          qnaPairs = parsedContent;
+        } else if (parsedContent && parsedContent.qnaPairs){
+         qnaPairs = parsedContent.qnaPairs;
+        }
+        else {
+          throw new Error("Invalid Data Structure");
+        }
+
+
         // Set qaData to the qnaPairs array
-        setQAData(parsedContent.qnaPairs);
+        setQAData(qnaPairs);
+
       } catch (parseError) {
-        console.error("Error parsing JSON:", parseError);
-        setError("Failed to parse QA data.");
-         setQAData([]) //ensure it is set to an empty array so map operation does not fail
+          console.error("Error parsing JSON:", parseError);
+          setError("Failed to parse or invalid QA data format");
+          setQAData([]) //ensure it is set to an empty array so map operation does not fail
       }
 
       setLoading(false);
