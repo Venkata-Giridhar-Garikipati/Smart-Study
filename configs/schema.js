@@ -39,4 +39,9 @@ export const PAYMENT_RECORD_TABLE = pgTable('paymentRecord',{
   customerId:varchar(),
   sessionId:varchar()
 })
+export const PROGRESS_TABLE = pgTable('progress',{
+  id:serial().primaryKey(),
+  courseId:varchar().notNull(),
+  progress:json()
+})
 
