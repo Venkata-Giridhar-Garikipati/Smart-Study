@@ -132,6 +132,42 @@ body {
   animation: pulse 1s infinite;
 }
 
+@layer components {
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-blue-200;
+  }
+  
+  .nav-item {
+    @apply transition-colors duration-200 hover:bg-blue-50 dark:hover:bg-blue-900;
+  }
+  
+  .progress-animation {
+    @apply transition-all duration-1000 ease-in-out;
+  }
+  
+  .floating-button {
+    @apply hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200;
+  }
+  
+  .glass-effect {
+    @apply backdrop-blur-sm bg-white/30 dark:bg-gray-800/30;
+  }
+  
+  .pulse-animation {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+/*   
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .7;
+    }
+  }
+} */
+}
+
 @keyframes pulse {
   0% {
     opacity: 1;
