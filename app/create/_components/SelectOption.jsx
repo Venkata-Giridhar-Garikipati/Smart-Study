@@ -21,7 +21,7 @@ function SelectOption({selectedStudyType}) {
         },
         {
             name:'Others',
-            icon:'/Knowledge.png'
+            icon:'/knowledge.png'
         },
     ]
     const [selectedOption,setSelectedOption]=useState();
